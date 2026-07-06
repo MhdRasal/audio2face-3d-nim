@@ -1,5 +1,7 @@
 FROM nvcr.io/nim/nvidia/audio2face-3d:latest
 
+USER root
+
 RUN pip install --no-cache-dir \
     --index-url https://pypi.org/simple \
     "grpcio-tools>=1.64.0" \
