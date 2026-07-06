@@ -1,7 +1,7 @@
 FROM nvcr.io/nim/nvidia/audio2face-3d:latest
 
 RUN pip install --no-cache-dir \
-    "grpcio>=1.64.0" \
+    --index-url https://pypi.org/simple \
     "grpcio-tools>=1.64.0" \
     "fastapi[standard]"
 
