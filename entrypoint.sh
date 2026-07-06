@@ -1,14 +1,19 @@
 #!/bin/bash
 set -e
 
-NIM_START=$(find /opt/nim -name "start_server.py" -type f 2>/dev/null | head -1)
+NIM_START="/opt/nim/start_server.sh"
+if [ ! -f "$NIM_START" ]; then
+    NIM_START=$(find /opt/nim -name "start_server.sh" -type f 2>/dev/null | head -1)
+fi
 if [ -z "$NIM_START" ]; then
-    echo "[entrypoint] ERROR: start_server.py not found"
+    echo "[entrypoint] ERROR: start_server.sh not found in /opt/nim"
+    ls -la /opt/nim/ 2>/dev/null
     exit 1
 fi
 
+chmod +x "$NIM_START" 2>/dev/null || true
 echo "[entrypoint] Starting NIM server from $NIM_START ..."
-python "$NIM_START" &
+bash "$NIM_START" &
 
 echo "[entrypoint] Waiting for gRPC on port 52000..."
 for i in $(seq 1 150); do
