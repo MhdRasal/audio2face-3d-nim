@@ -6,11 +6,39 @@ app = modal.App("audio2face-3d-nim")
 cache_volume = modal.Volume.from_name("nim-cache", create_if_missing=True)
 workspace_volume = modal.Volume.from_name("nim-workspace", create_if_missing=True)
 
-# Modal builds the Docker image (has enough disk space, unlike GitHub Actions free tier)
-nim_image = modal.Image.from_dockerfile(
-    "Dockerfile",
-    context_local_dir=".",
-    secret=modal.Secret.from_name("nvcr-secret"),
+PROTO_DIR = "/app/protos"
+PB2_DIR = "/app/protos/_pb2"
+
+nim_image = (
+    modal.Image.from_registry(
+        "nvcr.io/nim/nvidia/audio2face-3d:latest",
+        secret=modal.Secret.from_name("nvcr-secret"),
+    )
+    .pip_install(
+        "grpcio-tools>=1.64.0",
+        "fastapi[standard]",
+        index_url="https://pypi.org/simple",
+    )
+    .add_local_dir(
+        "deps/Audio2Face-3D-Samples/proto/protobuf_files",
+        remote_path=PROTO_DIR,
+    )
+    .run_commands(
+        f"mkdir -p {PB2_DIR} && "
+        f"python -m grpc_tools.protoc "
+        f"--proto_path={PROTO_DIR} "
+        f"--python_out={PB2_DIR} "
+        f"--grpc_python_out={PB2_DIR} "
+        f"{PROTO_DIR}/nvidia_ace.services.a2f_controller.v1.proto "
+        f"{PROTO_DIR}/nvidia_ace.controller.v1.proto "
+        f"{PROTO_DIR}/nvidia_ace.a2f.v1.proto "
+        f"{PROTO_DIR}/nvidia_ace.animation_data.v1.proto "
+        f"{PROTO_DIR}/nvidia_ace.animation_id.v1.proto "
+        f"{PROTO_DIR}/nvidia_ace.audio.v1.proto "
+        f"{PROTO_DIR}/nvidia_ace.status.v1.proto "
+        f"{PROTO_DIR}/nvidia_ace.emotion_with_timecode.v1.proto "
+        f"{PROTO_DIR}/nvidia_ace.emotion_aggregate.v1.proto"
+    )
 )
 
 _light_image = modal.Image.debian_slim(python_version="3.12").pip_install("fastapi[standard]")
